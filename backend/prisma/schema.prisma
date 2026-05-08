@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String @id @db.Text
+  name         String
+  email        String @unique
+  passwordHash String @map("password_hash")
+
+  @@map("users")
+}
+
+model Lead {
+  id         String   @id @db.Text
+  name       String
+  company    String   @default("")
+  email      String
+  phone      String   @default("")
+  source     String
+  status     String
+  assignedTo String   @default("") @map("assigned_to")
+  dealValue  Decimal  @default(0) @map("deal_value") @db.Decimal(12, 2)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  notes Note[]
+
+  @@index([status], map: "leads_status_idx")
+  @@index([source], map: "leads_source_idx")
+  @@index([assignedTo], map: "leads_assigned_to_idx")
+  @@map("leads")
+}
+
+model Note {
+  id        String   @id @db.Text
+  leadId    String   @map("lead_id")
+  content   String
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId], map: "notes_lead_id_idx")
+  @@map("notes")
+}
